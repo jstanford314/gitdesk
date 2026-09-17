@@ -6,6 +6,7 @@ import type {
   GitCommit,
   GitRemote,
   ProviderRepo,
+  StashEntry,
   WorkingStatus
 } from '@shared/types'
 
@@ -25,6 +26,10 @@ interface AppState {
   selectedFile: SelectedFile
   selectedFileDiff: FileDiff | null
   showingChanges: boolean
+
+  stashes: StashEntry[]
+  selectedStashRef: string | null
+  selectedStashDiff: FileDiff[] | null
 
   settings: AppSettings | null
   githubRepos: ProviderRepo[]
@@ -50,10 +55,17 @@ interface AppState {
   refreshLog: () => Promise<void>
   refreshBranches: () => Promise<void>
   refreshRemotes: () => Promise<void>
+  refreshStashes: () => Promise<void>
 
   selectCommit: (hash: string | null) => Promise<void>
   selectFile: (path: string | null, staged: boolean) => Promise<void>
+  selectStash: (ref: string | null) => Promise<void>
   showChangesView: () => void
+
+  stashSave: (message?: string, includeUntracked?: boolean) => Promise<void>
+  stashApply: (ref: string) => Promise<void>
+  stashPop: (ref: string) => Promise<void>
+  stashDrop: (ref: string) => Promise<void>
 
   stageFile: (path: string) => Promise<void>
   unstageFile: (path: string) => Promise<void>
@@ -109,6 +121,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedFile: null,
   selectedFileDiff: null,
   showingChanges: false,
+
+  stashes: [],
+  selectedStashRef: null,
+  selectedStashDiff: null,
 
   settings: null,
   githubRepos: [],
@@ -193,10 +209,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (dir) await get().cloneRepo(url, dir)
   },
 
-  closeRepo: () => set({ repoPath: null, repoName: null, status: null, commits: [], branches: [], remotes: [] }),
+  closeRepo: () =>
+    set({ repoPath: null, repoName: null, status: null, commits: [], branches: [], remotes: [], stashes: [] }),
 
   refreshAll: async () => {
-    await Promise.all([get().refreshStatus(), get().refreshLog(), get().refreshBranches(), get().refreshRemotes()])
+    await Promise.all([
+      get().refreshStatus(),
+      get().refreshLog(),
+      get().refreshBranches(),
+      get().refreshRemotes(),
+      get().refreshStashes()
+    ])
   },
 
   refreshStatus: async () => {
@@ -227,6 +250,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ remotes })
   },
 
+  refreshStashes: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const stashes = await window.gitApi.getStashes(repoPath)
+    set({ stashes })
+  },
+
   selectCommit: async (hash) => {
     const { repoPath } = get()
     set({
@@ -234,7 +264,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       selectedFile: null,
       selectedFileDiff: null,
       selectedCommitDiff: null,
-      showingChanges: false
+      showingChanges: false,
+      selectedStashRef: null,
+      selectedStashDiff: null
     })
     if (!repoPath || !hash) return
     const diff = await window.gitApi.getCommitDiff(repoPath, hash)
@@ -253,8 +285,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ selectedFileDiff: diff })
   },
 
+  selectStash: async (ref) => {
+    const { repoPath } = get()
+    set({
+      selectedStashRef: ref,
+      showingChanges: false,
+      selectedCommitHash: null,
+      selectedCommitDiff: null,
+      selectedFile: null,
+      selectedFileDiff: null,
+      selectedStashDiff: null
+    })
+    if (!repoPath || !ref) return
+    const diff = await window.gitApi.getStashDiff(repoPath, ref)
+    set({ selectedStashDiff: diff })
+  },
+
   showChangesView: () => {
-    set({ showingChanges: true, selectedCommitHash: null, selectedCommitDiff: null })
+    set({
+      showingChanges: true,
+      selectedCommitHash: null,
+      selectedCommitDiff: null,
+      selectedStashRef: null,
+      selectedStashDiff: null
+    })
   },
 
   stageFile: async (path) => {
@@ -425,6 +479,42 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!repoPath) return
     await window.gitApi.markResolved(repoPath, path)
     await get().refreshStatus()
+  },
+
+  stashSave: async (message, includeUntracked) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp('Stashing changes…', () =>
+      window.gitApi.stashSave(repoPath, message, includeUntracked)
+    )
+    if (ok) {
+      set({ selectedFile: null, selectedFileDiff: null })
+      await Promise.all([get().refreshStatus(), get().refreshStashes()])
+    }
+  },
+  stashApply: async (ref) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp('Applying stash…', () => window.gitApi.stashApply(repoPath, ref))
+    if (ok) await get().refreshStatus()
+  },
+  stashPop: async (ref) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp('Popping stash…', () => window.gitApi.stashPop(repoPath, ref))
+    if (ok) {
+      if (get().selectedStashRef === ref) set({ selectedStashRef: null, selectedStashDiff: null })
+      await Promise.all([get().refreshStatus(), get().refreshStashes()])
+    }
+  },
+  stashDrop: async (ref) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp('Dropping stash…', () => window.gitApi.stashDrop(repoPath, ref))
+    if (ok) {
+      if (get().selectedStashRef === ref) set({ selectedStashRef: null, selectedStashDiff: null })
+      await get().refreshStashes()
+    }
   },
 
   loadGithubRepos: async () => {

@@ -66,13 +66,53 @@ function BranchRow({ name, isCurrent, isRemote }: { name: string; isCurrent: boo
   )
 }
 
+function StashRow({ stashRef, message }: { stashRef: string; message: string }): JSX.Element {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const selectedStashRef = useAppStore((s) => s.selectedStashRef)
+  const selectStash = useAppStore((s) => s.selectStash)
+  const stashApply = useAppStore((s) => s.stashApply)
+  const stashPop = useAppStore((s) => s.stashPop)
+  const stashDrop = useAppStore((s) => s.stashDrop)
+
+  return (
+    <div className={`branch-row ${selectedStashRef === stashRef ? 'current' : ''}`}>
+      <button className="branch-row-main" onClick={() => selectStash(stashRef)} title="View stash diff">
+        <span className="branch-name">{message}</span>
+        <span className="remote-url">{stashRef}</span>
+      </button>
+      <div className="branch-row-actions">
+        <button className="icon-btn" onClick={() => setMenuOpen((v) => !v)} title="Actions">
+          ⋯
+        </button>
+        {menuOpen && (
+          <div className="dropdown" onMouseLeave={() => setMenuOpen(false)}>
+            <button onClick={() => { stashApply(stashRef); setMenuOpen(false) }}>Apply</button>
+            <button onClick={() => { stashPop(stashRef); setMenuOpen(false) }}>Pop (apply &amp; drop)</button>
+            <button
+              className="danger"
+              onClick={() => {
+                if (confirm(`Drop stash "${message}"? This cannot be undone.`)) stashDrop(stashRef)
+                setMenuOpen(false)
+              }}
+            >
+              Drop
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Sidebar(): JSX.Element {
   const branches = useAppStore((s) => s.branches)
   const remotes = useAppStore((s) => s.remotes)
+  const stashes = useAppStore((s) => s.stashes)
   const createBranch = useAppStore((s) => s.createBranch)
   const fetchRemote = useAppStore((s) => s.fetchRemote)
   const addRemote = useAppStore((s) => s.addRemote)
   const removeRemote = useAppStore((s) => s.removeRemote)
+  const stashSave = useAppStore((s) => s.stashSave)
 
   const local = useMemo(() => branches.filter((b) => !b.isRemote), [branches])
   const remoteBranches = useMemo(() => branches.filter((b) => b.isRemote), [branches])
@@ -104,6 +144,27 @@ export default function Sidebar(): JSX.Element {
         </div>
         {local.map((b) => (
           <BranchRow key={b.name} name={b.name} isCurrent={b.isCurrent} isRemote={false} />
+        ))}
+      </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-header">
+          <span>STASHES</span>
+          <button
+            className="icon-btn"
+            title="Stash current changes"
+            onClick={() => {
+              const message = prompt('Stash message (optional)') ?? undefined
+              const includeUntracked = confirm('Include untracked files in the stash?')
+              stashSave(message || undefined, includeUntracked)
+            }}
+          >
+            +
+          </button>
+        </div>
+        {stashes.length === 0 && <div className="empty-hint small">No stashes.</div>}
+        {stashes.map((s) => (
+          <StashRow key={s.ref} stashRef={s.ref} message={s.message} />
         ))}
       </div>
 

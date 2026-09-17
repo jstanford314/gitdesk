@@ -5,12 +5,14 @@ import Sidebar from './components/Sidebar'
 import GraphPanel from './components/GraphPanel'
 import ChangesView from './components/ChangesView'
 import CommitDetailsView from './components/CommitDetailsView'
+import StashDetailsView from './components/StashDetailsView'
 import WelcomeScreen from './components/WelcomeScreen'
 import SettingsModal from './components/SettingsModal'
 
 export default function App(): JSX.Element {
   const repoPath = useAppStore((s) => s.repoPath)
   const showingChanges = useAppStore((s) => s.showingChanges)
+  const selectedStashRef = useAppStore((s) => s.selectedStashRef)
   const loadSettings = useAppStore((s) => s.loadSettings)
   const closeRepo = useAppStore((s) => s.closeRepo)
   const error = useAppStore((s) => s.error)
@@ -53,7 +55,9 @@ export default function App(): JSX.Element {
       <div className="app-body">
         <Sidebar />
         <GraphPanel />
-        <div className="detail-pane">{showingChanges ? <ChangesView /> : <CommitDetailsView />}</div>
+        <div className="detail-pane">
+          {selectedStashRef ? <StashDetailsView /> : showingChanges ? <ChangesView /> : <CommitDetailsView />}
+        </div>
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>

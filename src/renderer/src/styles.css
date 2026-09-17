@@ -401,6 +401,11 @@ button {
   color: var(--text-2);
   text-align: center;
 }
+.empty-hint.small {
+  padding: 4px 16px;
+  text-align: left;
+  font-size: 12px;
+}
 
 /* Detail pane */
 .detail-pane {

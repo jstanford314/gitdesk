@@ -29,6 +29,8 @@ behaves exactly like the git you already know.
   sidebar.
 - **Remotes** — fetch, pull, push (with upstream tracking and
   force-with-lease), add/remove remotes.
+- **Stash** — save working changes (optionally including untracked files),
+  view a stash's diff, apply, pop, or drop it from the sidebar.
 - **Conflict resolution** — see conflicted files during a merge/rebase, take
   ours/theirs, or mark resolved manually; abort or continue the operation.
 - **GitHub integration** — connect a personal access token to browse and

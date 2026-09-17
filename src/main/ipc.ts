@@ -4,6 +4,7 @@ import { getLog } from './git/log'
 import { getBranches, getRemotes } from './git/branches'
 import { getFileDiff, getCommitDiff } from './git/diff'
 import * as ops from './git/ops'
+import * as stash from './git/stash'
 import { getSettings, saveSettings, addRecentRepo } from './settings'
 import { githubListRepos, githubCloneUrlWithAuth } from './providers/github'
 import { gitlabListRepos, gitlabCloneUrlWithAuth } from './providers/gitlab'
@@ -85,6 +86,13 @@ export function registerIpcHandlers(): void {
   handle('git:resolveConflictOurs', ops.resolveConflictOurs)
   handle('git:resolveConflictTheirs', ops.resolveConflictTheirs)
   handle('git:markResolved', ops.markResolved)
+
+  handle('git:getStashes', stash.getStashes)
+  handle('git:getStashDiff', stash.getStashDiff)
+  handle('git:stashSave', stash.stashSave)
+  handle('git:stashApply', stash.stashApply)
+  handle('git:stashPop', stash.stashPop)
+  handle('git:stashDrop', stash.stashDrop)
 
   handle('git:getSettings', getSettings)
   handle('git:saveSettings', async (settings: AppSettings) => {

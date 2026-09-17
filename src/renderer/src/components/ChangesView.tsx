@@ -97,6 +97,7 @@ export default function ChangesView(): JSX.Element {
   const abortMerge = useAppStore((s) => s.abortMerge)
   const abortRebase = useAppStore((s) => s.abortRebase)
   const continueRebase = useAppStore((s) => s.continueRebase)
+  const stashSave = useAppStore((s) => s.stashSave)
 
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
@@ -198,6 +199,17 @@ export default function ChangesView(): JSX.Element {
               }}
             >
               Commit
+            </button>
+            <button
+              className="toolbar-btn full-width"
+              disabled={status.staged.length === 0 && status.unstaged.length === 0}
+              onClick={() => {
+                const stashMessage = prompt('Stash message (optional)') ?? undefined
+                const includeUntracked = confirm('Include untracked files in the stash?')
+                stashSave(stashMessage || undefined, includeUntracked)
+              }}
+            >
+              Stash all changes
             </button>
           </div>
         </div>

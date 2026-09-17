@@ -8,6 +8,7 @@ import type {
   OpResult,
   ProviderRepo,
   RepoSummary,
+  StashEntry,
   WorkingStatus
 } from '@shared/types'
 
@@ -56,6 +57,13 @@ export interface GitApiClient {
   resolveConflictOurs(repoPath: string, path: string): Promise<OpResult>
   resolveConflictTheirs(repoPath: string, path: string): Promise<OpResult>
   markResolved(repoPath: string, path: string): Promise<OpResult>
+
+  getStashes(repoPath: string): Promise<StashEntry[]>
+  getStashDiff(repoPath: string, ref: string): Promise<FileDiff[]>
+  stashSave(repoPath: string, message?: string, includeUntracked?: boolean): Promise<OpResult>
+  stashApply(repoPath: string, ref: string): Promise<OpResult>
+  stashPop(repoPath: string, ref: string): Promise<OpResult>
+  stashDrop(repoPath: string, ref: string): Promise<OpResult>
 
   getSettings(): Promise<AppSettings>
   saveSettings(settings: AppSettings): Promise<OpResult>

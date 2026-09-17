@@ -61,6 +61,14 @@ const api = {
   resolveConflictTheirs: (repoPath: string, path: string) => invoke('git:resolveConflictTheirs', repoPath, path),
   markResolved: (repoPath: string, path: string) => invoke('git:markResolved', repoPath, path),
 
+  getStashes: (repoPath: string) => invoke('git:getStashes', repoPath),
+  getStashDiff: (repoPath: string, ref: string) => invoke('git:getStashDiff', repoPath, ref),
+  stashSave: (repoPath: string, message?: string, includeUntracked?: boolean) =>
+    invoke('git:stashSave', repoPath, message, includeUntracked),
+  stashApply: (repoPath: string, ref: string) => invoke('git:stashApply', repoPath, ref),
+  stashPop: (repoPath: string, ref: string) => invoke('git:stashPop', repoPath, ref),
+  stashDrop: (repoPath: string, ref: string) => invoke('git:stashDrop', repoPath, ref),
+
   getSettings: () => invoke<AppSettings>('git:getSettings'),
   saveSettings: (settings: AppSettings) => invoke('git:saveSettings', settings),
 
