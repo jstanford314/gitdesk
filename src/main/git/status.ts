@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, statSync } from 'node:fs'
+import { isAbsolute, join } from 'node:path'
 import { git } from './exec'
 import type { FileChangeType, FileStatusEntry, WorkingStatus } from '@shared/types'
 
@@ -95,17 +97,36 @@ export function parsePorcelainV2(raw: string): WorkingStatus {
   return status
 }
 
+/**
+ * Resolves the repo's .git directory without spawning `git rev-parse
+ * --git-dir` in the common case, since getStatus runs very frequently
+ * (every poll, every mutating action) and process spawns are relatively
+ * expensive on Windows. Falls back to the git subprocess for worktrees,
+ * submodules, or anything else that doesn't match the plain-directory case.
+ */
+async function resolveGitDir(repoPath: string): Promise<string> {
+  const plain = join(repoPath, '.git')
+  if (existsSync(plain)) {
+    if (statSync(plain).isDirectory()) return plain
+    // Worktree/submodule: .git is a file containing "gitdir: <path>"
+    const contents = readFileSync(plain, 'utf8').trim()
+    const match = contents.match(/^gitdir:\s*(.+)$/)
+    if (match) return isAbsolute(match[1]) ? match[1] : join(repoPath, match[1])
+  }
+  const gitDir = (await git(repoPath, 'rev-parse', '--git-dir')).trim()
+  return isAbsolute(gitDir) ? gitDir : join(repoPath, gitDir)
+}
+
 export async function getStatus(repoPath: string): Promise<WorkingStatus> {
-  const raw = await git(repoPath, 'status', '--porcelain=v2', '--branch')
+  // --no-optional-locks avoids git status opportunistically refreshing/writing
+  // the index, which can contend with other git processes touching this repo.
+  const raw = await git(repoPath, '--no-optional-locks', 'status', '--porcelain=v2', '--branch')
   const status = parsePorcelainV2(raw)
 
-  const gitDir = (await git(repoPath, 'rev-parse', '--git-dir')).trim()
-  const path = await import('node:path')
-  const fs = await import('node:fs')
-  const abs = path.isAbsolute(gitDir) ? gitDir : path.join(repoPath, gitDir)
-  status.inMerge = fs.existsSync(path.join(abs, 'MERGE_HEAD'))
-  status.inRebase = fs.existsSync(path.join(abs, 'rebase-merge')) || fs.existsSync(path.join(abs, 'rebase-apply'))
-  status.inCherryPick = fs.existsSync(path.join(abs, 'CHERRY_PICK_HEAD'))
+  const abs = await resolveGitDir(repoPath)
+  status.inMerge = existsSync(join(abs, 'MERGE_HEAD'))
+  status.inRebase = existsSync(join(abs, 'rebase-merge')) || existsSync(join(abs, 'rebase-apply'))
+  status.inCherryPick = existsSync(join(abs, 'CHERRY_PICK_HEAD'))
 
   return status
 }

@@ -28,7 +28,10 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     if (!repoPath) return
-    const id = setInterval(() => refreshStatus(), 4000)
+    // Purely a safety net for changes made outside the app (a terminal, another
+    // tool); every in-app action already triggers its own explicit refresh, so
+    // this can be infrequent without hurting responsiveness to your own actions.
+    const id = setInterval(() => refreshStatus(), 10000)
     return () => clearInterval(id)
   }, [repoPath, refreshStatus])
 
