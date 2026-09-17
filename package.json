@@ -1,0 +1,46 @@
+{
+  "name": "gitdesk",
+  "version": "0.1.0",
+  "description": "A visual desktop Git client (commit graph, staging, branching, merge/rebase, GitHub & GitLab integration)",
+  "private": true,
+  "main": "dist-electron/main/index.js",
+  "type": "module",
+  "author": {
+    "name": "Jesse Stanford",
+    "email": "122219918+jstanford314@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/jstanford314/gitdesk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jstanford314/gitdesk.git"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "build:unpack": "electron-vite build && electron-builder --dir",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "dist": "electron-vite build && electron-builder --mac --win --linux",
+    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:linux": "electron-vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.1"
+  }
+}
