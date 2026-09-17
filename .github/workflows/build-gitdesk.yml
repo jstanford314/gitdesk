@@ -59,16 +59,35 @@ jobs:
         with:
           path: artifacts
 
-      # softprops/action-gh-release proved flaky uploading ~10 large binaries at
-      # once ("Error saving asset" / "Error creating asset temp dir"), so publish
-      # with the GitHub CLI instead, which is preinstalled on GitHub-hosted runners.
+      # GitHub's own release-assets upload endpoint has proven flaky under this
+      # batch of ~10 large binaries: softprops/action-gh-release failed twice
+      # with vague errors, and the gh CLI's own bulk upload (all files in one
+      # invocation) then hit a clean "HTTP 500: Error creating asset temp dir"
+      # from uploads.github.com on one specific file. Upload strictly one file
+      # at a time with per-file retries so a transient 500 on any single asset
+      # doesn't take the whole release down.
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release upload "$TAG" artifacts/*/* --clobber --repo "${{ github.repository }}"
-          else
-            gh release create "$TAG" artifacts/*/* --title "$TAG" --generate-notes --repo "${{ github.repository }}"
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes --repo "${{ github.repository }}"
           fi
+
+          find artifacts -type f | sort | while read -r file; do
+            echo "Uploading $file..."
+            success=false
+            for attempt in 1 2 3 4 5; do
+              if gh release upload "$TAG" "$file" --clobber --repo "${{ github.repository }}"; then
+                success=true
+                break
+              fi
+              echo "Attempt $attempt failed, retrying in 8s..."
+              sleep 8
+            done
+            if [ "$success" != "true" ]; then
+              echo "::error::Failed to upload $file after 5 attempts"
+              exit 1
+            fi
+          done
