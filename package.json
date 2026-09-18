@@ -1,6 +1,6 @@
 {
   "name": "gitdesk",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "A visual desktop Git client (commit graph, staging, branching, merge/rebase, GitHub & GitLab integration)",
   "private": true,
   "main": "dist-electron/main/index.js",
