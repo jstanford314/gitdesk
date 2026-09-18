@@ -549,6 +549,16 @@ button {
   border-bottom: 1px solid var(--border);
   font-size: 12px;
 }
+.op-banner.op-banner-column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.op-banner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .op-banner-actions {
   display: flex;
   gap: 8px;
@@ -747,6 +757,9 @@ button {
   border-radius: var(--radius-lg);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
+.modal.wide {
+  width: 640px;
+}
 .modal-header {
   display: flex;
   align-items: center;
@@ -787,4 +800,70 @@ button {
   background: var(--bg-2);
   padding: 1px 4px;
   border-radius: 3px;
+}
+
+/* Interactive rebase planner */
+.rebase-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.rebase-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-2);
+  border-radius: var(--radius);
+}
+.rebase-plan-reorder {
+  display: flex;
+  flex-direction: column;
+}
+.rebase-plan-reorder .icon-btn {
+  width: 18px;
+  height: 14px;
+  font-size: 10px;
+}
+.rebase-plan-action {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 80px;
+}
+.rebase-plan-hash {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.rebase-plan-subject {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rebase-plan-subject.dropped {
+  text-decoration: line-through;
+  color: var(--text-2);
+}
+
+/* Rebase / cherry-pick progress banner */
+.rebase-progress {
+  font-size: 12px;
+  color: var(--text-1);
+  margin-right: auto;
+}
+.reword-input {
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  margin: 8px 0;
 }

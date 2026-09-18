@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AppSettings,
-  CloneOptions
+  CloneOptions,
+  RebaseTodoItem
 } from '@shared/types'
 
 function invoke<R>(channel: string, ...args: unknown[]): Promise<R> {
@@ -68,6 +69,26 @@ const api = {
   stashApply: (repoPath: string, ref: string) => invoke('git:stashApply', repoPath, ref),
   stashPop: (repoPath: string, ref: string) => invoke('git:stashPop', repoPath, ref),
   stashDrop: (repoPath: string, ref: string) => invoke('git:stashDrop', repoPath, ref),
+
+  getTags: (repoPath: string) => invoke('git:getTags', repoPath),
+  createTag: (repoPath: string, name: string, target: string, message?: string) =>
+    invoke('git:createTag', repoPath, name, target, message),
+  deleteTag: (repoPath: string, name: string) => invoke('git:deleteTag', repoPath, name),
+  pushTag: (repoPath: string, remote: string, name: string) => invoke('git:pushTag', repoPath, remote, name),
+  deleteRemoteTag: (repoPath: string, remote: string, name: string) =>
+    invoke('git:deleteRemoteTag', repoPath, remote, name),
+
+  cherryPick: (repoPath: string, hash: string) => invoke('git:cherryPick', repoPath, hash),
+  cherryPickAbort: (repoPath: string) => invoke('git:cherryPickAbort', repoPath),
+  cherryPickContinue: (repoPath: string) => invoke('git:cherryPickContinue', repoPath),
+
+  getCommitsForRebase: (repoPath: string, ontoRef: string) => invoke('git:getCommitsForRebase', repoPath, ontoRef),
+  getInteractiveRebaseState: (repoPath: string) => invoke('git:getInteractiveRebaseState', repoPath),
+  startInteractiveRebase: (repoPath: string, ontoRef: string, todo: RebaseTodoItem[]) =>
+    invoke('git:startInteractiveRebase', repoPath, ontoRef, todo),
+  continueInteractiveRebase: (repoPath: string, rewordMessage?: string) =>
+    invoke('git:continueInteractiveRebase', repoPath, rewordMessage),
+  abortInteractiveRebase: (repoPath: string) => invoke('git:abortInteractiveRebase', repoPath),
 
   getSettings: () => invoke<AppSettings>('git:getSettings'),
   saveSettings: (settings: AppSettings) => invoke('git:saveSettings', settings),

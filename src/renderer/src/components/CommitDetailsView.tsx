@@ -7,6 +7,9 @@ export default function CommitDetailsView(): JSX.Element {
   const commits = useAppStore((s) => s.commits)
   const selectedCommitHash = useAppStore((s) => s.selectedCommitHash)
   const selectedCommitDiff = useAppStore((s) => s.selectedCommitDiff)
+  const status = useAppStore((s) => s.status)
+  const cherryPick = useAppStore((s) => s.cherryPick)
+  const createTag = useAppStore((s) => s.createTag)
 
   const commit = commits.find((c) => c.hash === selectedCommitHash)
   const [activePath, setActivePath] = useState<string | null>(null)
@@ -29,6 +32,26 @@ export default function CommitDetailsView(): JSX.Element {
         </div>
         <div className="commit-detail-meta">
           {shortHash(commit.hash)} {commit.parents.length > 1 ? '(merge)' : ''}
+        </div>
+        <div className="op-banner-actions" style={{ marginTop: 10 }}>
+          <button
+            className="toolbar-btn"
+            onClick={() => cherryPick(commit.hash)}
+            title={status?.branch ? `Apply this commit onto ${status.branch}` : 'Apply this commit onto the current branch'}
+          >
+            Cherry-pick
+          </button>
+          <button
+            className="toolbar-btn"
+            onClick={() => {
+              const name = prompt('Tag name')
+              if (!name) return
+              const message = prompt('Annotation message (optional, leave blank for a lightweight tag)') ?? undefined
+              createTag(name, commit.hash, message || undefined)
+            }}
+          >
+            Tag this commit
+          </button>
         </div>
       </div>
 

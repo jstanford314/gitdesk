@@ -8,6 +8,7 @@ import CommitDetailsView from './components/CommitDetailsView'
 import StashDetailsView from './components/StashDetailsView'
 import WelcomeScreen from './components/WelcomeScreen'
 import SettingsModal from './components/SettingsModal'
+import InteractiveRebaseModal from './components/InteractiveRebaseModal'
 
 export default function App(): JSX.Element {
   const repoPath = useAppStore((s) => s.repoPath)
@@ -63,6 +64,7 @@ export default function App(): JSX.Element {
         </div>
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      <InteractiveRebaseModal />
     </div>
   )
 }

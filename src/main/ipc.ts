@@ -5,10 +5,12 @@ import { getBranches, getRemotes } from './git/branches'
 import { getFileDiff, getCommitDiff } from './git/diff'
 import * as ops from './git/ops'
 import * as stash from './git/stash'
+import * as tags from './git/tags'
+import * as rebaseEngine from './git/interactiveRebase'
 import { getSettings, saveSettings, addRecentRepo } from './settings'
 import { githubListRepos, githubCloneUrlWithAuth } from './providers/github'
 import { gitlabListRepos, gitlabCloneUrlWithAuth } from './providers/gitlab'
-import type { AppSettings, CloneOptions } from '@shared/types'
+import type { AppSettings, CloneOptions, RebaseTodoItem } from '@shared/types'
 
 function handle<Args extends unknown[], R>(channel: string, fn: (...args: Args) => Promise<R>): void {
   ipcMain.handle(channel, async (_event, ...args: Args) => fn(...args))
@@ -93,6 +95,24 @@ export function registerIpcHandlers(): void {
   handle('git:stashApply', stash.stashApply)
   handle('git:stashPop', stash.stashPop)
   handle('git:stashDrop', stash.stashDrop)
+
+  handle('git:getTags', tags.getTags)
+  handle('git:createTag', tags.createTag)
+  handle('git:deleteTag', tags.deleteTag)
+  handle('git:pushTag', tags.pushTag)
+  handle('git:deleteRemoteTag', tags.deleteRemoteTag)
+
+  handle('git:cherryPick', ops.cherryPick)
+  handle('git:cherryPickAbort', ops.cherryPickAbort)
+  handle('git:cherryPickContinue', ops.cherryPickContinue)
+
+  handle('git:getCommitsForRebase', rebaseEngine.getCommitsForRebase)
+  handle('git:getInteractiveRebaseState', async (repoPath: string) => rebaseEngine.readRebaseState(repoPath))
+  handle('git:startInteractiveRebase', (repoPath: string, ontoRef: string, todo: RebaseTodoItem[]) =>
+    rebaseEngine.startInteractiveRebase(repoPath, ontoRef, todo)
+  )
+  handle('git:continueInteractiveRebase', rebaseEngine.continueInteractiveRebase)
+  handle('git:abortInteractiveRebase', rebaseEngine.abortInteractiveRebase)
 
   handle('git:getSettings', getSettings)
   handle('git:saveSettings', async (settings: AppSettings) => {

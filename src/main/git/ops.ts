@@ -273,6 +273,35 @@ export async function abortRebase(repoPath: string): Promise<OpResult> {
   }
 }
 
+// --- Cherry-pick ---
+
+export async function cherryPick(repoPath: string, hash: string): Promise<OpResult> {
+  try {
+    await git(repoPath, 'cherry-pick', hash)
+    return ok()
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+export async function cherryPickAbort(repoPath: string): Promise<OpResult> {
+  try {
+    await git(repoPath, 'cherry-pick', '--abort')
+    return ok()
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+export async function cherryPickContinue(repoPath: string): Promise<OpResult> {
+  try {
+    await git(repoPath, '-c', 'core.editor=true', 'cherry-pick', '--continue')
+    return ok()
+  } catch (e) {
+    return fail(e)
+  }
+}
+
 // --- Conflict resolution ---
 
 export async function resolveConflictOurs(repoPath: string, path: string): Promise<OpResult> {

@@ -93,6 +93,29 @@ export interface StashEntry {
   date: string
 }
 
+export interface GitTag {
+  name: string
+  targetHash: string
+  message: string | null
+  isAnnotated: boolean
+}
+
+export type RebaseTodoAction = 'pick' | 'squash' | 'fixup' | 'reword' | 'edit' | 'drop'
+
+export interface RebaseTodoItem {
+  hash: string
+  subject: string
+  action: RebaseTodoAction
+}
+
+export interface InteractiveRebaseState {
+  originalBranch: string
+  todo: RebaseTodoItem[]
+  currentIndex: number
+  paused: boolean
+  pauseReason: 'conflict' | 'reword' | 'edit' | null
+}
+
 export interface RepoSummary {
   path: string
   name: string
@@ -192,6 +215,22 @@ export interface GitApi {
   stashApply(repoPath: string, ref: string): Promise<OpResult>
   stashPop(repoPath: string, ref: string): Promise<OpResult>
   stashDrop(repoPath: string, ref: string): Promise<OpResult>
+
+  getTags(repoPath: string): Promise<GitTag[]>
+  createTag(repoPath: string, name: string, target: string, message?: string): Promise<OpResult>
+  deleteTag(repoPath: string, name: string): Promise<OpResult>
+  pushTag(repoPath: string, remote: string, name: string): Promise<OpResult>
+  deleteRemoteTag(repoPath: string, remote: string, name: string): Promise<OpResult>
+
+  cherryPick(repoPath: string, hash: string): Promise<OpResult>
+  cherryPickAbort(repoPath: string): Promise<OpResult>
+  cherryPickContinue(repoPath: string): Promise<OpResult>
+
+  getCommitsForRebase(repoPath: string, ontoRef: string): Promise<RebaseTodoItem[]>
+  getInteractiveRebaseState(repoPath: string): Promise<InteractiveRebaseState | null>
+  startInteractiveRebase(repoPath: string, ontoRef: string, todo: RebaseTodoItem[]): Promise<OpResult>
+  continueInteractiveRebase(repoPath: string, rewordMessage?: string): Promise<OpResult>
+  abortInteractiveRebase(repoPath: string): Promise<OpResult>
 
   getSettings(): Promise<AppSettings>
   saveSettings(settings: AppSettings): Promise<OpResult>

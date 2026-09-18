@@ -3,15 +3,17 @@ import type { ReactNode } from 'react'
 export default function Modal({
   title,
   onClose,
-  children
+  children,
+  wide
 }: {
   title: string
   onClose: () => void
   children: ReactNode
+  wide?: boolean
 }): JSX.Element {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <span>{title}</span>
           <button className="icon-btn" onClick={onClose}>

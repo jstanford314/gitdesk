@@ -5,7 +5,10 @@ import type {
   GitBranch,
   GitCommit,
   GitRemote,
+  GitTag,
+  InteractiveRebaseState,
   ProviderRepo,
+  RebaseTodoItem,
   StashEntry,
   WorkingStatus
 } from '@shared/types'
@@ -30,6 +33,12 @@ interface AppState {
   stashes: StashEntry[]
   selectedStashRef: string | null
   selectedStashDiff: FileDiff[] | null
+
+  tags: GitTag[]
+
+  interactiveRebase: InteractiveRebaseState | null
+  rebasePlanCommits: RebaseTodoItem[]
+  rebasePlanOnto: string | null
 
   settings: AppSettings | null
   githubRepos: ProviderRepo[]
@@ -56,6 +65,8 @@ interface AppState {
   refreshBranches: () => Promise<void>
   refreshRemotes: () => Promise<void>
   refreshStashes: () => Promise<void>
+  refreshTags: () => Promise<void>
+  refreshInteractiveRebase: () => Promise<void>
 
   selectCommit: (hash: string | null) => Promise<void>
   selectFile: (path: string | null, staged: boolean) => Promise<void>
@@ -66,6 +77,22 @@ interface AppState {
   stashApply: (ref: string) => Promise<void>
   stashPop: (ref: string) => Promise<void>
   stashDrop: (ref: string) => Promise<void>
+
+  createTag: (name: string, target: string, message?: string) => Promise<void>
+  deleteTag: (name: string) => Promise<void>
+  pushTag: (remote: string, name: string) => Promise<void>
+  deleteRemoteTag: (remote: string, name: string) => Promise<void>
+
+  cherryPick: (hash: string) => Promise<void>
+  cherryPickAbort: () => Promise<void>
+  cherryPickContinue: () => Promise<void>
+
+  openRebasePlanner: (ontoRef: string) => Promise<void>
+  closeRebasePlanner: () => void
+  setRebasePlanCommits: (items: RebaseTodoItem[]) => void
+  startInteractiveRebase: () => Promise<void>
+  continueInteractiveRebase: (rewordMessage?: string) => Promise<void>
+  abortInteractiveRebase: () => Promise<void>
 
   stageFile: (path: string) => Promise<void>
   unstageFile: (path: string) => Promise<void>
@@ -125,6 +152,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   stashes: [],
   selectedStashRef: null,
   selectedStashDiff: null,
+
+  tags: [],
+
+  interactiveRebase: null,
+  rebasePlanCommits: [],
+  rebasePlanOnto: null,
 
   settings: null,
   githubRepos: [],
@@ -210,7 +243,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeRepo: () =>
-    set({ repoPath: null, repoName: null, status: null, commits: [], branches: [], remotes: [], stashes: [] }),
+    set({
+      repoPath: null,
+      repoName: null,
+      status: null,
+      commits: [],
+      branches: [],
+      remotes: [],
+      stashes: [],
+      tags: [],
+      interactiveRebase: null
+    }),
 
   refreshAll: async () => {
     await Promise.all([
@@ -218,7 +261,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       get().refreshLog(),
       get().refreshBranches(),
       get().refreshRemotes(),
-      get().refreshStashes()
+      get().refreshStashes(),
+      get().refreshTags(),
+      get().refreshInteractiveRebase()
     ])
   },
 
@@ -255,6 +300,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!repoPath) return
     const stashes = await window.gitApi.getStashes(repoPath)
     set({ stashes })
+  },
+
+  refreshTags: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const tags = await window.gitApi.getTags(repoPath)
+    set({ tags })
+  },
+
+  refreshInteractiveRebase: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const interactiveRebase = await window.gitApi.getInteractiveRebaseState(repoPath)
+    set({ interactiveRebase })
   },
 
   selectCommit: async (hash) => {
@@ -515,6 +574,79 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (get().selectedStashRef === ref) set({ selectedStashRef: null, selectedStashDiff: null })
       await get().refreshStashes()
     }
+  },
+
+  createTag: async (name, target, message) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp(`Creating tag ${name}…`, () => window.gitApi.createTag(repoPath, name, target, message))
+    if (ok) await get().refreshTags()
+  },
+  deleteTag: async (name) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const ok = await get().runOp(`Deleting tag ${name}…`, () => window.gitApi.deleteTag(repoPath, name))
+    if (ok) await get().refreshTags()
+  },
+  pushTag: async (remote, name) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp(`Pushing tag ${name}…`, () => window.gitApi.pushTag(repoPath, remote, name))
+  },
+  deleteRemoteTag: async (remote, name) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp(`Deleting ${name} from ${remote}…`, () => window.gitApi.deleteRemoteTag(repoPath, remote, name))
+  },
+
+  cherryPick: async (hash) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp('Cherry-picking…', () => window.gitApi.cherryPick(repoPath, hash))
+    await get().refreshAll()
+  },
+  cherryPickAbort: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp('Aborting cherry-pick…', () => window.gitApi.cherryPickAbort(repoPath))
+    await get().refreshAll()
+  },
+  cherryPickContinue: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp('Continuing cherry-pick…', () => window.gitApi.cherryPickContinue(repoPath))
+    await get().refreshAll()
+  },
+
+  openRebasePlanner: async (ontoRef) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    const commits = await window.gitApi.getCommitsForRebase(repoPath, ontoRef)
+    set({ rebasePlanOnto: ontoRef, rebasePlanCommits: commits })
+  },
+  closeRebasePlanner: () => set({ rebasePlanOnto: null, rebasePlanCommits: [] }),
+  setRebasePlanCommits: (items) => set({ rebasePlanCommits: items }),
+
+  startInteractiveRebase: async () => {
+    const { repoPath, rebasePlanOnto, rebasePlanCommits } = get()
+    if (!repoPath || !rebasePlanOnto) return
+    set({ rebasePlanOnto: null, rebasePlanCommits: [] })
+    await get().runOp('Starting interactive rebase…', () =>
+      window.gitApi.startInteractiveRebase(repoPath, rebasePlanOnto, rebasePlanCommits)
+    )
+    await get().refreshAll()
+  },
+  continueInteractiveRebase: async (rewordMessage) => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp('Continuing rebase…', () => window.gitApi.continueInteractiveRebase(repoPath, rewordMessage))
+    await get().refreshAll()
+  },
+  abortInteractiveRebase: async () => {
+    const { repoPath } = get()
+    if (!repoPath) return
+    await get().runOp('Aborting rebase…', () => window.gitApi.abortInteractiveRebase(repoPath))
+    await get().refreshAll()
   },
 
   loadGithubRepos: async () => {

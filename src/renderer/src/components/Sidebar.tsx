@@ -8,6 +8,7 @@ function BranchRow({ name, isCurrent, isRemote }: { name: string; isCurrent: boo
   const renameBranch = useAppStore((s) => s.renameBranch)
   const merge = useAppStore((s) => s.merge)
   const rebase = useAppStore((s) => s.rebase)
+  const openRebasePlanner = useAppStore((s) => s.openRebasePlanner)
   const status = useAppStore((s) => s.status)
 
   const localCheckoutName = isRemote ? name.split('/').slice(1).join('/') : name
@@ -36,6 +37,11 @@ function BranchRow({ name, isCurrent, isRemote }: { name: string; isCurrent: boo
             )}
             {!isCurrent && !isRemote && status?.branch && (
               <button onClick={() => { rebase(name); setMenuOpen(false) }}>Rebase {status.branch} onto this</button>
+            )}
+            {!isCurrent && status?.branch && (
+              <button onClick={() => { openRebasePlanner(name); setMenuOpen(false) }}>
+                Interactive rebase {status.branch} onto this…
+              </button>
             )}
             {!isRemote && (
               <button
@@ -104,15 +110,69 @@ function StashRow({ stashRef, message }: { stashRef: string; message: string }):
   )
 }
 
+function TagRow({ name, targetHash }: { name: string; targetHash: string }): JSX.Element {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const remotes = useAppStore((s) => s.remotes)
+  const deleteTag = useAppStore((s) => s.deleteTag)
+  const pushTag = useAppStore((s) => s.pushTag)
+  const deleteRemoteTag = useAppStore((s) => s.deleteRemoteTag)
+
+  return (
+    <div className="branch-row">
+      <button className="branch-row-main" title={targetHash}>
+        <span className="branch-name">{name}</span>
+        <span className="remote-url">{targetHash.slice(0, 7)}</span>
+      </button>
+      <div className="branch-row-actions">
+        <button className="icon-btn" onClick={() => setMenuOpen((v) => !v)} title="Actions">
+          ⋯
+        </button>
+        {menuOpen && (
+          <div className="dropdown" onMouseLeave={() => setMenuOpen(false)}>
+            {remotes.map((r) => (
+              <button key={r.name} onClick={() => { pushTag(r.name, name); setMenuOpen(false) }}>
+                Push to {r.name}
+              </button>
+            ))}
+            {remotes.map((r) => (
+              <button
+                key={`del-${r.name}`}
+                className="danger"
+                onClick={() => {
+                  if (confirm(`Delete tag "${name}" from ${r.name}?`)) deleteRemoteTag(r.name, name)
+                  setMenuOpen(false)
+                }}
+              >
+                Delete from {r.name}
+              </button>
+            ))}
+            <button
+              className="danger"
+              onClick={() => {
+                if (confirm(`Delete local tag "${name}"?`)) deleteTag(name)
+                setMenuOpen(false)
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Sidebar(): JSX.Element {
   const branches = useAppStore((s) => s.branches)
   const remotes = useAppStore((s) => s.remotes)
   const stashes = useAppStore((s) => s.stashes)
+  const tags = useAppStore((s) => s.tags)
   const createBranch = useAppStore((s) => s.createBranch)
   const fetchRemote = useAppStore((s) => s.fetchRemote)
   const addRemote = useAppStore((s) => s.addRemote)
   const removeRemote = useAppStore((s) => s.removeRemote)
   const stashSave = useAppStore((s) => s.stashSave)
+  const createTag = useAppStore((s) => s.createTag)
 
   const local = useMemo(() => branches.filter((b) => !b.isRemote), [branches])
   const remoteBranches = useMemo(() => branches.filter((b) => b.isRemote), [branches])
@@ -165,6 +225,28 @@ export default function Sidebar(): JSX.Element {
         {stashes.length === 0 && <div className="empty-hint small">No stashes.</div>}
         {stashes.map((s) => (
           <StashRow key={s.ref} stashRef={s.ref} message={s.message} />
+        ))}
+      </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-header">
+          <span>TAGS</span>
+          <button
+            className="icon-btn"
+            title="Tag current commit (HEAD)"
+            onClick={() => {
+              const name = prompt('Tag name')
+              if (!name) return
+              const message = prompt('Annotation message (optional, leave blank for a lightweight tag)') ?? undefined
+              createTag(name, 'HEAD', message || undefined)
+            }}
+          >
+            +
+          </button>
+        </div>
+        {tags.length === 0 && <div className="empty-hint small">No tags.</div>}
+        {tags.map((t) => (
+          <TagRow key={t.name} name={t.name} targetHash={t.targetHash} />
         ))}
       </div>
 

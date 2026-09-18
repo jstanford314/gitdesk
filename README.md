@@ -31,8 +31,16 @@ behaves exactly like the git you already know.
   force-with-lease), add/remove remotes.
 - **Stash** — save working changes (optionally including untracked files),
   view a stash's diff, apply, pop, or drop it from the sidebar.
-- **Conflict resolution** — see conflicted files during a merge/rebase, take
-  ours/theirs, or mark resolved manually; abort or continue the operation.
+- **Tags** — create lightweight or annotated tags on any commit, push them to
+  a remote, or delete them locally and remotely from the sidebar.
+- **Cherry-pick** — apply any commit onto the current branch from its detail
+  view.
+- **Interactive rebase** — reorder, reword, edit, drop, squash, or fixup a
+  range of commits with a drag-free planner UI; pauses on conflicts just
+  like a normal rebase.
+- **Conflict resolution** — see conflicted files during a merge/rebase/
+  cherry-pick/interactive rebase, take ours/theirs, or mark resolved
+  manually; abort or continue the operation.
 - **GitHub integration** — connect a personal access token to browse and
   clone your repositories.
 - **GitLab integration** — connect any instance (gitlab.com or a self-hosted
