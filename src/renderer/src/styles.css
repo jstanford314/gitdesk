@@ -802,6 +802,33 @@ button {
   border-radius: 3px;
 }
 
+.prompt-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prompt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.prompt-field input {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--text-1);
+  font-size: 13px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
 /* Interactive rebase planner */
 .rebase-plan-list {
   display: flex;

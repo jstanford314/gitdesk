@@ -103,6 +103,7 @@ export default function ChangesView(): JSX.Element {
   const continueInteractiveRebase = useAppStore((s) => s.continueInteractiveRebase)
   const abortInteractiveRebase = useAppStore((s) => s.abortInteractiveRebase)
   const stashSave = useAppStore((s) => s.stashSave)
+  const openPrompt = useAppStore((s) => s.openPrompt)
 
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
@@ -254,10 +255,13 @@ export default function ChangesView(): JSX.Element {
             <button
               className="toolbar-btn full-width"
               disabled={status.staged.length === 0 && status.unstaged.length === 0}
-              onClick={() => {
-                const stashMessage = prompt('Stash message (optional)') ?? undefined
+              onClick={async () => {
+                const values = await openPrompt('Stash all changes', [
+                  { key: 'message', label: 'Stash message (optional)' }
+                ])
+                if (values === null) return
                 const includeUntracked = confirm('Include untracked files in the stash?')
-                stashSave(stashMessage || undefined, includeUntracked)
+                stashSave(values.message || undefined, includeUntracked)
               }}
             >
               Stash all changes

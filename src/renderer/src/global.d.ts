@@ -89,6 +89,8 @@ export interface GitApiClient {
 
   githubListRepos(): Promise<ProviderRepo[]>
   gitlabListRepos(): Promise<ProviderRepo[]>
+
+  onMenuAction(cb: (action: string) => void): () => void
 }
 
 declare global {

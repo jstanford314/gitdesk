@@ -9,6 +9,7 @@ import StashDetailsView from './components/StashDetailsView'
 import WelcomeScreen from './components/WelcomeScreen'
 import SettingsModal from './components/SettingsModal'
 import InteractiveRebaseModal from './components/InteractiveRebaseModal'
+import PromptModal from './components/PromptModal'
 
 export default function App(): JSX.Element {
   const repoPath = useAppStore((s) => s.repoPath)
@@ -19,11 +20,45 @@ export default function App(): JSX.Element {
   const error = useAppStore((s) => s.error)
   const setError = useAppStore((s) => s.setError)
   const refreshStatus = useAppStore((s) => s.refreshStatus)
+  const pickAndOpen = useAppStore((s) => s.pickAndOpen)
+  const pickAndClone = useAppStore((s) => s.pickAndClone)
+  const initRepo = useAppStore((s) => s.initRepo)
+  const openPrompt = useAppStore((s) => s.openPrompt)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     loadSettings()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = window.gitApi.onMenuAction(async (action) => {
+      switch (action) {
+        case 'open-repo':
+          await pickAndOpen()
+          break
+        case 'clone-repo': {
+          const values = await openPrompt('Clone Repository', [
+            { key: 'url', label: 'Repository URL', placeholder: 'https://github.com/user/repo.git' }
+          ])
+          if (values?.url) await pickAndClone(values.url)
+          break
+        }
+        case 'init-repo': {
+          const dir = await window.gitApi.pickDirectory()
+          if (dir) await initRepo(dir)
+          break
+        }
+        case 'close-repo':
+          closeRepo()
+          break
+        case 'preferences':
+          setSettingsOpen(true)
+          break
+      }
+    })
+    return unsubscribe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -41,6 +76,7 @@ export default function App(): JSX.Element {
       <>
         <WelcomeScreen onOpenSettings={() => setSettingsOpen(true)} />
         {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+        <PromptModal />
       </>
     )
   }
@@ -65,6 +101,7 @@ export default function App(): JSX.Element {
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <InteractiveRebaseModal />
+      <PromptModal />
     </div>
   )
 }

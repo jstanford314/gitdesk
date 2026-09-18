@@ -94,7 +94,13 @@ const api = {
   saveSettings: (settings: AppSettings) => invoke('git:saveSettings', settings),
 
   githubListRepos: () => invoke('git:githubListRepos'),
-  gitlabListRepos: () => invoke('git:gitlabListRepos')
+  gitlabListRepos: () => invoke('git:gitlabListRepos'),
+
+  onMenuAction: (cb: (action: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, action: string): void => cb(action)
+    ipcRenderer.on('menu:action', listener)
+    return () => ipcRenderer.removeListener('menu:action', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('gitApi', api)

@@ -10,6 +10,7 @@ export default function CommitDetailsView(): JSX.Element {
   const status = useAppStore((s) => s.status)
   const cherryPick = useAppStore((s) => s.cherryPick)
   const createTag = useAppStore((s) => s.createTag)
+  const openPrompt = useAppStore((s) => s.openPrompt)
 
   const commit = commits.find((c) => c.hash === selectedCommitHash)
   const [activePath, setActivePath] = useState<string | null>(null)
@@ -43,11 +44,16 @@ export default function CommitDetailsView(): JSX.Element {
           </button>
           <button
             className="toolbar-btn"
-            onClick={() => {
-              const name = prompt('Tag name')
-              if (!name) return
-              const message = prompt('Annotation message (optional, leave blank for a lightweight tag)') ?? undefined
-              createTag(name, commit.hash, message || undefined)
+            onClick={async () => {
+              const values = await openPrompt('Tag this commit', [
+                { key: 'name', label: 'Tag name' },
+                {
+                  key: 'message',
+                  label: 'Annotation message (optional, leave blank for a lightweight tag)'
+                }
+              ])
+              if (!values?.name) return
+              createTag(values.name, commit.hash, values.message || undefined)
             }}
           >
             Tag this commit

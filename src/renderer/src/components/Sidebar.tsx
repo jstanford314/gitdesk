@@ -10,6 +10,7 @@ function BranchRow({ name, isCurrent, isRemote }: { name: string; isCurrent: boo
   const rebase = useAppStore((s) => s.rebase)
   const openRebasePlanner = useAppStore((s) => s.openRebasePlanner)
   const status = useAppStore((s) => s.status)
+  const openPrompt = useAppStore((s) => s.openPrompt)
 
   const localCheckoutName = isRemote ? name.split('/').slice(1).join('/') : name
 
@@ -45,10 +46,12 @@ function BranchRow({ name, isCurrent, isRemote }: { name: string; isCurrent: boo
             )}
             {!isRemote && (
               <button
-                onClick={() => {
-                  const newName = prompt('New branch name', name)
-                  if (newName && newName !== name) renameBranch(name, newName)
+                onClick={async () => {
                   setMenuOpen(false)
+                  const values = await openPrompt('Rename branch', [
+                    { key: 'name', label: 'New branch name', defaultValue: name }
+                  ])
+                  if (values?.name && values.name !== name) renameBranch(name, values.name)
                 }}
               >
                 Rename
@@ -173,6 +176,7 @@ export default function Sidebar(): JSX.Element {
   const removeRemote = useAppStore((s) => s.removeRemote)
   const stashSave = useAppStore((s) => s.stashSave)
   const createTag = useAppStore((s) => s.createTag)
+  const openPrompt = useAppStore((s) => s.openPrompt)
 
   const local = useMemo(() => branches.filter((b) => !b.isRemote), [branches])
   const remoteBranches = useMemo(() => branches.filter((b) => b.isRemote), [branches])
@@ -194,9 +198,9 @@ export default function Sidebar(): JSX.Element {
           <button
             className="icon-btn"
             title="New branch"
-            onClick={() => {
-              const name = prompt('New branch name')
-              if (name) createBranch(name)
+            onClick={async () => {
+              const values = await openPrompt('New branch', [{ key: 'name', label: 'Branch name' }])
+              if (values?.name) createBranch(values.name)
             }}
           >
             +
@@ -213,10 +217,11 @@ export default function Sidebar(): JSX.Element {
           <button
             className="icon-btn"
             title="Stash current changes"
-            onClick={() => {
-              const message = prompt('Stash message (optional)') ?? undefined
+            onClick={async () => {
+              const values = await openPrompt('Stash changes', [{ key: 'message', label: 'Stash message (optional)' }])
+              if (values === null) return
               const includeUntracked = confirm('Include untracked files in the stash?')
-              stashSave(message || undefined, includeUntracked)
+              stashSave(values.message || undefined, includeUntracked)
             }}
           >
             +
@@ -234,11 +239,16 @@ export default function Sidebar(): JSX.Element {
           <button
             className="icon-btn"
             title="Tag current commit (HEAD)"
-            onClick={() => {
-              const name = prompt('Tag name')
-              if (!name) return
-              const message = prompt('Annotation message (optional, leave blank for a lightweight tag)') ?? undefined
-              createTag(name, 'HEAD', message || undefined)
+            onClick={async () => {
+              const values = await openPrompt('New tag', [
+                { key: 'name', label: 'Tag name' },
+                {
+                  key: 'message',
+                  label: 'Annotation message (optional, leave blank for a lightweight tag)'
+                }
+              ])
+              if (!values?.name) return
+              createTag(values.name, 'HEAD', values.message || undefined)
             }}
           >
             +
@@ -256,11 +266,12 @@ export default function Sidebar(): JSX.Element {
           <button
             className="icon-btn"
             title="Add remote"
-            onClick={() => {
-              const name = prompt('Remote name', 'origin')
-              if (!name) return
-              const url = prompt('Remote URL')
-              if (url) addRemote(name, url)
+            onClick={async () => {
+              const values = await openPrompt('Add remote', [
+                { key: 'name', label: 'Remote name', defaultValue: 'origin' },
+                { key: 'url', label: 'Remote URL' }
+              ])
+              if (values?.name && values.url) addRemote(values.name, values.url)
             }}
           >
             +

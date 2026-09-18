@@ -15,6 +15,20 @@ import type {
 
 type SelectedFile = { path: string; staged: boolean } | null
 
+export interface PromptField {
+  key: string
+  label: string
+  defaultValue?: string
+  placeholder?: string
+}
+
+interface PromptRequest {
+  title: string
+  fields: PromptField[]
+  confirmLabel?: string
+  resolve: (values: Record<string, string> | null) => void
+}
+
 interface AppState {
   repoPath: string | null
   repoName: string | null
@@ -48,6 +62,10 @@ interface AppState {
   busyLabel: string | null
   error: string | null
   toast: string | null
+
+  promptRequest: PromptRequest | null
+  openPrompt: (title: string, fields: PromptField[], confirmLabel?: string) => Promise<Record<string, string> | null>
+  resolvePrompt: (values: Record<string, string> | null) => void
 
   loadSettings: () => Promise<void>
   saveSettings: (s: AppSettings) => Promise<void>
@@ -167,6 +185,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   busyLabel: null,
   error: null,
   toast: null,
+
+  promptRequest: null,
+  openPrompt: (title, fields, confirmLabel) =>
+    new Promise((resolve) => {
+      set({ promptRequest: { title, fields, confirmLabel, resolve } })
+    }),
+  resolvePrompt: (values) => {
+    const req = get().promptRequest
+    set({ promptRequest: null })
+    req?.resolve(values)
+  },
 
   setError: (e) => set({ error: e }),
   setToast: (t) => set({ toast: t }),

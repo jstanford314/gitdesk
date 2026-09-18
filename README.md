@@ -45,6 +45,8 @@ behaves exactly like the git you already know.
   clone your repositories.
 - **GitLab integration** — connect any instance (gitlab.com or a self-hosted
   install) via URL + personal access token to browse and clone projects.
+- **Native menu bar** — File/Edit/View/Window/Help with Open/Clone/New
+  Repository, Preferences, and standard OS window/edit actions.
 
 ## Install
 

@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
+import { buildAppMenu } from './menu'
 
 const isDev = !app.isPackaged
 
@@ -24,6 +25,8 @@ function createWindow(): void {
     shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  Menu.setApplicationMenu(buildAppMenu(win, isDev))
 
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)

@@ -13,6 +13,7 @@ export default function WelcomeScreen({ onOpenSettings }: { onOpenSettings: () =
   const pickAndOpen = useAppStore((s) => s.pickAndOpen)
   const pickAndClone = useAppStore((s) => s.pickAndClone)
   const initRepo = useAppStore((s) => s.initRepo)
+  const openPrompt = useAppStore((s) => s.openPrompt)
   const error = useAppStore((s) => s.error)
   const busy = useAppStore((s) => s.busy)
   const busyLabel = useAppStore((s) => s.busyLabel)
@@ -37,9 +38,11 @@ export default function WelcomeScreen({ onOpenSettings }: { onOpenSettings: () =
           </button>
           <button
             className="toolbar-btn"
-            onClick={() => {
-              const url = prompt('Repository URL to clone')
-              if (url) pickAndClone(url)
+            onClick={async () => {
+              const values = await openPrompt('Clone Repository', [
+                { key: 'url', label: 'Repository URL', placeholder: 'https://github.com/user/repo.git' }
+              ])
+              if (values?.url) pickAndClone(values.url)
             }}
           >
             Clone Repository
