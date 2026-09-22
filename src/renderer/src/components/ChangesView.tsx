@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import DiffViewer from './DiffViewer'
+import PanelResizer from './PanelResizer'
+import { useResizableWidth } from '../hooks/useResizableWidth'
 import type { FileStatusEntry } from '@shared/types'
 
 function FileRow({
@@ -108,6 +110,8 @@ export default function ChangesView(): JSX.Element {
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
   const [rewordMessage, setRewordMessage] = useState('')
+
+  const resizeFileLists = useResizableWidth('--file-lists-width', 'gitdesk:fileListsWidth', 200, 600)
 
   if (!status) return <div className="diff-empty">Loading…</div>
 
@@ -268,6 +272,8 @@ export default function ChangesView(): JSX.Element {
             </button>
           </div>
         </div>
+
+        <PanelResizer onMouseDown={resizeFileLists} />
 
         <div className="diff-pane">
           <DiffViewer diff={selectedFileDiff} editable={selectedFile ? (selectedFile.staged ? 'staged' : 'unstaged') : undefined} />

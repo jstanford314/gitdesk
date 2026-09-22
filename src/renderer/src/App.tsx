@@ -10,6 +10,8 @@ import WelcomeScreen from './components/WelcomeScreen'
 import SettingsModal from './components/SettingsModal'
 import InteractiveRebaseModal from './components/InteractiveRebaseModal'
 import PromptModal from './components/PromptModal'
+import PanelResizer from './components/PanelResizer'
+import { restoreResizableWidths, useResizableWidth } from './hooks/useResizableWidth'
 
 export default function App(): JSX.Element {
   const repoPath = useAppStore((s) => s.repoPath)
@@ -27,8 +29,16 @@ export default function App(): JSX.Element {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
 
+  const resizeSidebar = useResizableWidth('--sidebar-width', 'gitdesk:sidebarWidth', 160, 420)
+  const resizeGraph = useResizableWidth('--graph-width', 'gitdesk:graphWidth', 280, 900)
+
   useEffect(() => {
     loadSettings()
+    restoreResizableWidths([
+      ['gitdesk:sidebarWidth', '--sidebar-width'],
+      ['gitdesk:graphWidth', '--graph-width'],
+      ['gitdesk:fileListsWidth', '--file-lists-width']
+    ])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -94,7 +104,9 @@ export default function App(): JSX.Element {
       )}
       <div className="app-body">
         <Sidebar />
+        <PanelResizer onMouseDown={resizeSidebar} />
         <GraphPanel />
+        <PanelResizer onMouseDown={resizeGraph} />
         <div className="detail-pane">
           {selectedStashRef ? <StashDetailsView /> : showingChanges ? <ChangesView /> : <CommitDetailsView />}
         </div>

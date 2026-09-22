@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import DiffViewer from './DiffViewer'
+import PanelResizer from './PanelResizer'
+import { useResizableWidth } from '../hooks/useResizableWidth'
 import { shortHash } from '../lib/format'
 
 export default function CommitDetailsView(): JSX.Element {
@@ -14,6 +16,7 @@ export default function CommitDetailsView(): JSX.Element {
 
   const commit = commits.find((c) => c.hash === selectedCommitHash)
   const [activePath, setActivePath] = useState<string | null>(null)
+  const resizeFileLists = useResizableWidth('--file-lists-width', 'gitdesk:fileListsWidth', 200, 600)
 
   useEffect(() => {
     setActivePath(selectedCommitDiff && selectedCommitDiff.length > 0 ? selectedCommitDiff[0].path : null)
@@ -81,6 +84,7 @@ export default function CommitDetailsView(): JSX.Element {
             ))}
           </div>
         </div>
+        <PanelResizer onMouseDown={resizeFileLists} />
         <div className="diff-pane">
           <DiffViewer diff={activeDiff} />
         </div>

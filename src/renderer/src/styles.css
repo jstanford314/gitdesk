@@ -16,6 +16,10 @@
   --warning: #f0b132;
   --radius: 8px;
   --radius-lg: 12px;
+
+  --sidebar-width: 220px;
+  --graph-width: 460px;
+  --file-lists-width: 280px;
 }
 
 * {
@@ -202,7 +206,7 @@ button {
 }
 
 .sidebar {
-  width: 220px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
   background: var(--bg-1);
   border-right: 1px solid var(--border);
@@ -303,7 +307,7 @@ button {
 
 /* Graph panel */
 .graph-panel {
-  width: 460px;
+  width: var(--graph-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   overflow: hidden;
@@ -407,6 +411,26 @@ button {
   font-size: 12px;
 }
 
+.panel-resizer {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--border);
+  cursor: col-resize;
+  position: relative;
+}
+.panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+}
+.panel-resizer:hover,
+.panel-resizer:active {
+  background: var(--accent);
+}
+
 /* Detail pane */
 .detail-pane {
   flex: 1;
@@ -427,7 +451,7 @@ button {
   min-height: 0;
 }
 .file-lists {
-  width: 280px;
+  width: var(--file-lists-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   overflow-y: auto;
@@ -592,7 +616,7 @@ button {
   top: 0;
 }
 .diff-table {
-  width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
 }
 .diff-line {
@@ -613,8 +637,7 @@ button {
   vertical-align: top;
 }
 .diff-content {
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre;
 }
 .diff-add {
   background: rgba(35, 165, 90, 0.14);
